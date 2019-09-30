@@ -66,17 +66,25 @@ def main_pp(bam=sys.argv[1], outBam=sys.argv[2], min_as=60, min_cov=0.9, wsize=1
 	bamfile.close()
 	bamout.close()
 	print 'total {} reads, after is_proper_pair filter {}, after cov filter {}, after id filter {}'.format(xi,xj,xm, xn)
-
+def bin_chr(ref_len, bin_width=2000000):
+	bins = []
+	for ref, length in ref_len:
+		for start in range(0, length, bin_width):
+			end = start+bin_width
+			if end > length:
+				end = length
+			bins += [(ref, start, end)]
+	return bins
 def pp_run(bamfile, references, lengths, processors='autodetect'):
 	ppservers = ()
 	job_server = pp.Server(processors, ppservers=ppservers)
 	ref_len = sorted(zip(references, lengths), key=lambda x:x[1], reverse=1)
 	jobs = [(ref, job_server.submit(
 							filter_id, 
-							(bamfile, ref, length), 
+							(bamfile, ref, start, end), 
 							(find_peak_border, is_covered, get_cov, get_id), 
 							("import numpy as np", "pysam", 'sys', 'heapq') ) ) \
-			 for ref, length in ref_len ]
+			 for ref, start, end in bin_chr(ref_len) ]
 	d_hq = {}
 	xm = 0
 	for ref, job in jobs:
@@ -85,12 +93,12 @@ def pp_run(bamfile, references, lengths, processors='autodetect'):
 		print 'contig {} candicate {} reads'.format(ref, len(d_hq[ref]))
 	print 'total candicate {} reads '.format(xm)
 	return d_hq
-def filter_id(bamfile, ref, length, min_cov=0.9, min_as=60, wsize=100, wstep=25, bins = np.linspace(51,151,51), min_depth=3, max_depth=100):
+def filter_id(bamfile, ref, start0, end0, min_cov=0.9, min_as=60, wsize=100, wstep=25, bins = np.linspace(51,151,51), min_depth=3, max_depth=100):
 	bamfile = pysam.AlignmentFile(bamfile, 'rb')
 	xm, xn = 0,0
 	hq_idsx = set([])
-	f = open('/tmp/filterbam.{}.log'.format(ref), 'w')
-	for start in range(0, length, wstep):
+	f = open('/tmp/filterbam.{}-{}-{}.log'.format(ref, start0, end0), 'w')
+	for start in range(start0, end0, wstep):
 		end = start + wsize
 		d_id = {rc.query_name: rc.get_tag('AS') for rc in bamfile.fetch(ref, start, end) if rc.is_proper_pair and is_covered(rc, start, end) and get_cov(rc) >= min_cov and rc.has_tag('AS')}
 		if len(d_id) < min_depth:

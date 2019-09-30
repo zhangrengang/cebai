@@ -2,6 +2,7 @@
 import sys
 from Bio import SeqIO
 from Bio.Seq import Seq
+from xopen import xopen as open
 
 def vcf2dict(inVcf):
 	d_vcf = {}
@@ -47,9 +48,15 @@ def rm_dup2(d_vcf, CHROM, d_var):
 	else:
 		d_var = d_vcf[CHROM]	# update
 		return rm_dup2(d_vcf, CHROM, d_var)
-def main(inVcf=sys.argv[1], inRef=sys.argv[2], outRef=sys.stdout):
+def vcf2fasta(inVcf, inRef, outRef):
 	d_vcf = vcf2dict(inVcf)
-	outChanges = inRef + '.changes'
+	if not isinstance(outRef, file):
+		outChanges = outRef + '.changes'
+		outRef = open(outRef, 'w')
+		close = True
+	else:
+		outChanges = inRef + '.changes'
+		close = False
 	f = open(outChanges, 'w')
 	for rc in SeqIO.parse(inRef, 'fasta'):
 		polish = 1
@@ -86,8 +93,10 @@ def main(inVcf=sys.argv[1], inRef=sys.argv[2], outRef=sys.stdout):
 		segments += [str(rc.seq[left:])]
 		rc.seq = Seq(''.join(segments))
 		SeqIO.write(rc, outRef, 'fasta')
+	if close:
+		outRef.close()
 
 if __name__ == '__main__':
-	main()
+	vcf2fasta(inVcf=sys.argv[1], inRef=sys.argv[2], outRef=sys.stdout)
 			
 			

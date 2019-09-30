@@ -1,6 +1,6 @@
 import sys
-
-def main(inVcf=sys.argv[1], outVcf=sys.stdout, minQUAL=20, minDP=5):
+from xopen import xopen as open
+def filter_vcf(inVcf, outVcf, minQUAL=20, minDP=10):
 	for line in open(inVcf):
 		if line.startswith('#'):
 			outVcf.write(line)
@@ -17,7 +17,7 @@ def main(inVcf=sys.argv[1], outVcf=sys.stdout, minQUAL=20, minDP=5):
 		if float(QUAL) < minQUAL: # low QUAL
 			continue
 		dp = sample.split(':')[FORMAT.split(':').index('DP')]
-		if int(dp) <= minDP:	# low DP
+		if int(dp) < minDP:	# low DP
 			continue
 		alt = gts[0]
 		ALTs = ALT.split(',')
@@ -28,4 +28,4 @@ def main(inVcf=sys.argv[1], outVcf=sys.stdout, minQUAL=20, minDP=5):
 		line = [CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT, sample]
 		print >> outVcf, '\t'.join(line)
 if __name__ == '__main__':
-	main()
+	filter_vcf(inVcf=sys.argv[1], outVcf=sys.stdout, minQUAL=20, minDP=10)

@@ -1,21 +1,30 @@
 import sys
-
+from xopen import xopen as open
 def main(inDepth=sys.argv[1], outRegion=sys.stdout, minDepth=3, flank_length=130, min_length=5):
-	LOW_POS = []
-	for line in open(inDepth):
-		temp = line.strip().split()
-		CHR, POS, DEPTH = temp[:3]
-		POS = int(POS)
-		DEPTH = int(DEPTH)
-		if DEPTH <= minDepth:
-			LOW_POS.append((CHR, POS))
-	REGIONs = pos2region(LOW_POS, flank_length=flank_length, min_length=min_length)
+	REGIONs = []
+	for LOW_POS in getLowPos(inDepth, minDepth):
+		REGIONs += pos2region(LOW_POS, flank_length=flank_length, min_length=min_length)
 	for (CHR, START, END) in REGIONs:
 		START = START-1
 		line = [CHR, START, END]
 		line = map(str, line)
 		print >> outRegion, '\t'.join(line)
-	
+
+def getLowPos(inDepth, minDepth):
+	LOW_POS = []
+	lastCHR = ''
+	for line in open(inDepth):
+		temp = line.strip().split()
+		CHR, POS, DEPTH = temp[:3]
+		if not CHR == lastCHR and LOW_POS:
+			yield LOW_POS
+			LOW_POS = []
+		POS = int(POS)
+		DEPTH = int(DEPTH)
+		if DEPTH <= minDepth:
+			LOW_POS.append((CHR, POS))
+		lastCHR = CHR
+	yield LOW_POS
 def pos2region(POSs,flank_length=0,min_length=1):
 	REGIONs = []
 	d_max_depth = {}

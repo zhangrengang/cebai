@@ -8,7 +8,7 @@ ncpu=$5
 minimap2_opts="--sr"
 #bwa_opts="-x ont2d"
 #bwa_opts="-k14 -A1 -B1 -O1 -E1 -L0"
-bwa_opts="-k15 -A1 -B2 -O1 -E1 -L1 -r5 -U 35"
+bwa_opts= #"-k15 -A1 -B2 -O1 -E1 -L1 -r5 -U 35"
 
 function mapping_sge {
     refPrefix=$1
@@ -30,13 +30,13 @@ function mapping_sge {
 if [ ! -f $outDir/samtools.$i.bam.ok ]; then 
 #minimap2 -a $minimap2_opts -t 3 -R '@RG\tID:SR\tSM:SR' $refPrefix $r1 $r2 | samtools view -F 2304 -b | 
 bwa mem $bwa_opts $refPrefix $r1 $r2 -t 1 -R '@RG\tID:SR\tSM:SR' | samtools view -F 2304 -b | \
-            samtools sort -@ 1 -T /tmp/samtools.$i.$$ > $outDir/samtools.$i.bam && \
-touch $outDir/samtools.$i.bam.ok
+            samtools sort -@ 1 -T /tmp/samtools.$i.$$ > $outDir/samtools.$i.bam 
+[ -s $outDir/samtools.$i.bam ] && touch $outDir/samtools.$i.bam.ok
 fi
 "
         echo "fi"
     done < $readsList > $src
-    wait_exit `qsub -terse -cwd -j y -V -S /bin/bash -t 1-$i -tc $ncpu -o $src.out $src`
+    wait_exit `qsub -terse -cwd -j y -V -S /bin/bash -t 1-$i -tc $ncpu -o $src.out $src` &> /dev/null
     samtools merge - $outDir/samtools.*.bam -pc -@ $ncpu		#stdout
 }
 function mapping_parallel {
@@ -73,28 +73,28 @@ function mapping_wrapper {
 }
 
 # SGE
-function wait_exit {
-    JID=$1
-	i=0
-    while :
-    do
-        STATS=`qacct -j $JID 2> /dev/null | grep exit_status | awk '{print $2}'`
-        if [ x"$STATS" != x ]; then
-            break
-        fi
-        QSTATS=`qstat | awk '$1=="'$JID'"{print $5}'`
-        if [ x"$QSTATS" != x ]; then
-            sleep 1m
-        fi
-        if [ x"$STATS" = x ] && [ x"$QSTATS" = x ]; then
-            i=$[$i+1]
-            if [ $i -gt 5 ];then
-                break
-            fi
-        fi
-        sleep 1m
-    done
-}
+#function wait_exit {
+#    JID=$1
+#	i=0
+#    while :
+#    do
+#        STATS=`qacct -j $JID 2> /dev/null | grep exit_status | awk '{print $2}'`
+#        if [ x"$STATS" != x ]; then
+#            break
+#        fi
+#        QSTATS=`qstat | awk '$1=="'$JID'"{print $5}'`
+#        if [ x"$QSTATS" != x ]; then
+#            sleep 1m
+#        fi
+#        if [ x"$STATS" = x ] && [ x"$QSTATS" = x ]; then
+#            i=$[$i+1]
+#            if [ $i -gt 5 ];then
+#                break
+#            fi
+#        fi
+#        sleep 1m
+#    done
+#}
 
 # chunk reads
 # main pipeline

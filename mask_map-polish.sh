@@ -1,7 +1,7 @@
 #ref=ref2.fa
 ref=$1
-depth=depth.$ref.fb1/mapping.depth
-ncpu=20
+depth=depth.$ref.fb1/mapping.depth.gz
+ncpu=50
 tmpdir=tmpdir.pilon
 python /share/home/nature/src/low_coverage.py $depth > $depth.low.bed
 python /share/home/nature/src/mask_bed.py $ref $depth.low.bed > $ref.mask.fa

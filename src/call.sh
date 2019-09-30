@@ -45,28 +45,28 @@ function calling_wrapper {
 }
 
 # SGE
-function wait_exit {
-    JID=$1
-	i=0
-    while :
-    do
-        STATS=`qacct -j $JID 2> /dev/null | grep exit_status | awk '{print $2}'`
-        if [ x"$STATS" != x ]; then
-            break
-        fi
-        QSTATS=`qstat | awk '$1=="'$JID'"{print $5}'`
-        if [ x"$QSTATS" != x ]; then
-            sleep 1m
-        fi
-        if [ x"$STATS" = x ] && [ x"$QSTATS" = x ]; then
-            i=$[$i+1]
-            if [ $i -gt 5 ];then
-                break
-            fi
-        fi
-        sleep 1m
-    done
-}
+#function wait_exit {
+#    JID=$1
+#	i=0
+#    while :
+#    do
+#        STATS=`qacct -j $JID 2> /dev/null | grep exit_status | awk '{print $2}'`
+#        if [ x"$STATS" != x ]; then
+#            break
+#        fi
+#        QSTATS=`qstat | awk '$1=="'$JID'"{print $5}'`
+#        if [ x"$QSTATS" != x ]; then
+#            sleep 1m
+#        fi
+#        if [ x"$STATS" = x ] && [ x"$QSTATS" = x ]; then
+#            i=$[$i+1]
+#            if [ $i -gt 5 ];then
+#                break
+#            fi
+#        fi
+#        sleep 1m
+#    done
+#}
 
     # call variants
 ref=$1
